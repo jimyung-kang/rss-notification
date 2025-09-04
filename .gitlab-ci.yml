@@ -1,0 +1,197 @@
+# GitLab CI/CD for RSS 알림 스케줄러
+# GitLab Runner에서 자동으로 실행되는 RSS 알림 시스템
+
+# 스테이지 정의
+stages:
+  - setup
+  - test
+  - notify
+
+# 기본 이미지 설정
+image: node:20-alpine
+
+# 캐시 설정
+cache:
+  paths:
+    - node_modules/
+    - .pnpm-store/
+    - .cache/
+
+# 전역 변수 설정
+variables:
+  TZ: "Asia/Seoul"
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  PNPM_CACHE_FOLDER: .pnpm-store
+  npm_config_cache: .pnpm-store
+
+# 공통 설정 템플릿
+.common_setup: &common_setup
+  - echo "🚀 GitLab CI/CD RSS 알림 시스템 시작"
+  - apk update && apk add --no-cache tzdata
+  - cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime
+  - echo "Asia/Seoul" > /etc/timezone
+  - corepack enable
+  - corepack prepare pnpm@10.14.0 --activate
+  - pnpm config set store-dir .pnpm-store
+
+# Job 템플릿 정의
+.job_template: &job_template
+  timeout: 30m
+  before_script:
+    - *common_setup
+    - pnpm install --frozen-lockfile
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+
+# 의존성 설치 및 캐시 생성
+setup:
+  stage: setup
+  <<: *job_template
+  script:
+    - echo "📦 의존성 설치 및 검증"
+    - pnpm install --frozen-lockfile
+    - echo "✅ 설정 완료"
+  artifacts:
+    paths:
+      - node_modules/
+      - .pnpm-store/
+    expire_in: 1 hour
+  only:
+    - main
+    - develop
+    - merge_requests
+
+# 테스트 실행 (선택적)
+test:
+  stage: test
+  <<: *job_template
+  script:
+    - echo "🧪 필터링 시스템 테스트"
+    - |
+      if [ -f "src/test/aiFilterTest.js" ]; then
+        node src/test/aiFilterTest.js || echo "⚠️ AI 필터 테스트 경고 발생"
+      fi
+    - |
+      if [ -f "src/test/lenientFilterTest.js" ]; then
+        node src/test/lenientFilterTest.js || echo "⚠️ 관대한 필터 테스트 경고 발생"
+      fi
+    - echo "✅ 테스트 완료"
+  allow_failure: true
+  only:
+    variables:
+      - $RUN_TESTS == "true"
+
+# RSS 알림 실행 - 스케줄 기반
+rss-notification-scheduled:
+  stage: notify
+  <<: *job_template
+  script:
+    - echo "⏰ 스케줄 기반 RSS 알림 실행"
+    - |
+      # 환경 변수 파일 생성
+      cat > .env << EOF
+      TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      NODE_ENV=production
+      LOG_LEVEL=info
+      TZ=Asia/Seoul
+      PORT=3000
+      RSS_SCHEDULE_CRON=30 8 * * *
+      EOF
+    - echo "📱 RSS 피드 확인 및 알림 전송"
+    - node index.js --once --filter-days=1
+    - echo "✅ RSS 알림 완료 - $(date '+%Y-%m-%d %H:%M:%S KST')"
+  # 스케줄 실행: 매일 KST 09:00, 12:00, 15:00, 18:00
+  # GitLab 스케줄은 웹 인터페이스에서 설정해야 함
+  only:
+    - schedules
+  environment:
+    name: production
+
+# RSS 알림 실행 - 수동 실행
+rss-notification-manual:
+  stage: notify
+  <<: *job_template
+  script:
+    - echo "🚀 수동 RSS 알림 실행"
+    - |
+      # 환경 변수 파일 생성
+      cat > .env << EOF
+      TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      NODE_ENV=production
+      LOG_LEVEL=info
+      TZ=Asia/Seoul
+      PORT=3000
+      RSS_SCHEDULE_CRON=30 8 * * *
+      EOF
+    - |
+      # 실행 모드 결정
+      if [ "$EXECUTION_MODE" = "schedule" ]; then
+        echo "📅 스케줄 모드로 실행"
+        node index.js
+      elif [ "$EXECUTION_MODE" = "test" ]; then
+        echo "🧪 테스트 모드로 실행"
+        node index.js --once --dry-run --filter-days=3
+      else
+        echo "🎯 한번 실행 모드 (기본값)"
+        node index.js --once --filter-days=1
+      fi
+    - echo "✅ RSS 알림 완료 - $(date '+%Y-%m-%d %H:%M:%S KST')"
+  # 수동 실행만 허용
+  when: manual
+  only:
+    - main
+    - develop
+  environment:
+    name: production
+  # 커스텀 변수 지원
+  variables:
+    EXECUTION_MODE: "once"  # once, schedule, test
+
+# 긴급 알림 실행 (즉시 실행)
+rss-notification-urgent:
+  stage: notify
+  <<: *job_template
+  script:
+    - echo "🚨 긴급 RSS 알림 실행"
+    - |
+      # 환경 변수 파일 생성
+      cat > .env << EOF
+      TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      NODE_ENV=production
+      LOG_LEVEL=info
+      TZ=Asia/Seoul
+      PORT=3000
+      EOF
+    - echo "⚡ 긴급 모드: 최근 3일간 업데이트 확인"
+    - node index.js --once --filter-days=3
+    - echo "✅ 긴급 알림 완료 - $(date '+%Y-%m-%d %H:%M:%S KST')"
+  # 수동 실행, 언제든 가능
+  when: manual
+  allow_failure: false
+  environment:
+    name: production
+
+# 실행 후 정리 작업
+after_script:
+  - echo "🧹 정리 작업"
+  - |
+    if [ -f ".env" ]; then
+      rm -f .env
+      echo "환경 변수 파일 정리 완료"
+    fi
+  - |
+    if [ -d "logs" ]; then
+      echo "📊 로그 통계:"
+      find logs -name "*.log" -type f -exec wc -l {} + 2>/dev/null || echo "로그 파일 없음"
+    fi
+  - echo "🎉 작업 완료 - $(date '+%Y-%m-%d %H:%M:%S KST')"

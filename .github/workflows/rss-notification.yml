@@ -1,0 +1,129 @@
+name: RSS 알림 스케줄러
+
+# 스케줄링 설정
+on:
+  schedule:
+    # KST 09:00 = UTC 00:00
+    - cron: '0 0 * * *'
+    # KST 12:00 = UTC 03:00
+    - cron: '0 3 * * *'
+    # KST 15:00 = UTC 06:00
+    - cron: '0 6 * * *'
+    # KST 18:00 = UTC 09:00
+    - cron: '0 9 * * *'
+  
+  # 수동 실행 허용
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '실행 모드'
+        required: false
+        default: 'once'
+        type: choice
+        options:
+          - 'once'
+          - 'schedule'
+      test_run:
+        description: '테스트 실행 여부'
+        required: false
+        default: false
+        type: boolean
+
+# 환경 변수 설정
+env:
+  TZ: Asia/Seoul
+  NODE_ENV: production
+  LOG_LEVEL: info
+
+jobs:
+  rss-notification:
+    runs-on: ubuntu-latest
+    
+    # 타임아웃 설정 (30분)
+    timeout-minutes: 30
+    
+    steps:
+      # 코드 체크아웃
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+      
+      # Node.js 환경 설정
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      # pnpm 설치 (프로젝트에서 사용하는 패키지 매니저)
+      - name: pnpm 설치
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+      
+      # 오늘 날짜 설정 (캐시 키용)
+      - name: 날짜 설정
+        id: date
+        run: |
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+      
+      # 의존성 설치
+      - name: 의존성 설치
+        run: pnpm install --frozen-lockfile
+      
+      # RSS 캐시 복원
+      - name: RSS 캐시 복원
+        uses: actions/cache@v4
+        with:
+          path: .cache/rss-daily-cache.json
+          key: rss-daily-cache-${{ steps.date.outputs.date }}
+          restore-keys: |
+            rss-daily-cache-
+      
+      # 환경 변수 파일 생성 (Secrets과 Variables 모두 사용)
+      - name: 환경 변수 설정
+        run: |
+          echo "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}" >> .env
+          echo "TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}" >> .env
+          echo "WEBHOOK_SECRET=${{ secrets.WEBHOOK_SECRET || vars.WEBHOOK_SECRET }}" >> .env
+          echo "NODE_ENV=production" >> .env
+          echo "LOG_LEVEL=info" >> .env
+          echo "TZ=Asia/Seoul" >> .env
+          echo "PORT=3000" >> .env
+          echo "RSS_SCHEDULE_CRON=30 8 * * *" >> .env
+      
+      # 테스트 실행 (선택적)
+      - name: 테스트 실행
+        if: ${{ github.event.inputs.test_run == 'true' }}
+        run: |
+          echo "🧪 필터링 테스트 실행"
+          node src/test/aiFilterTest.js || true
+          node src/test/lenientFilterTest.js || true
+      
+      # RSS 알림 실행
+      - name: RSS 알림 실행
+        run: |
+          # 스케줄 트리거 또는 수동 실행 감지
+          if [ "${{ github.event_name }}" == "schedule" ]; then
+            echo "⏰ 스케줄 실행: KST 9시/12시/15시/18시"
+            node index.js --once --filter-days=1
+          elif [ "${{ github.event.inputs.mode }}" == "schedule" ]; then
+            echo "📅 수동 스케줄 모드로 실행"
+            node index.js
+          else
+            echo "🚀 한번 실행 모드"
+            node index.js --once --filter-days=1
+          fi
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET || vars.WEBHOOK_SECRET }}
+      
+      # 실행 완료 로그
+      - name: 실행 완료 알림
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "✅ RSS 알림 실행 완료"
+          else
+            echo "❌ RSS 알림 실행 실패"
+          fi

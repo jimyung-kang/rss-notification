@@ -1,0 +1,46 @@
+{
+  "name": "rss-notification",
+  "version": "1.0.0",
+  "description": "Korean FE Article & GeekNews 텔레그램 알림 봇 - RSS 피드와 웹훅을 통해 새로운 글을 텔레그램으로 전송",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "once": "node index.js --once --filter-days=1",
+    "once:test": "node index.js --once --dry-run",
+    "start:interval": "node index.js --start-hour=9 --end-hour=18 --interval=2",
+    "start:times": "node index.js --times=9,12,15,17:30",
+    "start:test-once": "node index.js --once --dry-run",
+    "start:test-interval": "node index.js --start-hour=9 --end-hour=18 --interval=1 --dry-run",
+    "start:test-times": "node index.js --times=10,14,17:30 --dry-run",
+    "start:morning": "node index.js --times=8:30,10,11:30",
+    "start:workday": "node index.js --start-hour=9 --end-hour=18 --interval=3",
+    "test:rss": "node src/test/test-rss.js",
+    "logs:stats": "node scripts/log-manager.js stats",
+    "logs:cleanup": "node scripts/log-manager.js cleanup",
+    "logs:cleanup:week": "node scripts/log-manager.js cleanup 7",
+    "logs:compress": "node scripts/log-manager.js compress",
+    "logs:search": "node scripts/log-manager.js search",
+    "logs:help": "node scripts/log-manager.js help",
+    "help": "node index.js --help"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.14.0",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "body-parser": "^2.2.0",
+    "cheerio": "^1.1.2",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "node-cron": "^4.2.1",
+    "node-telegram-bot-api": "^0.66.0",
+    "rss-parser": "^3.13.0",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

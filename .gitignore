@@ -1,0 +1,72 @@
+# 환경 변수
+.env
+.env.local
+.env.production
+.env.*.local
+
+# 로그 파일
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 의존성
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 에디터 설정
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS 생성 파일
+Thumbs.db
+desktop.ini
+
+# 테스트 커버리지
+coverage/
+.nyc_output/
+
+# TypeScript 캐시
+*.tsbuildinfo
+
+# 빌드 출력
+build/
+out/
+
+# 임시 파일
+tmp/
+temp/
+*.tmp
+*.temp
+
+# PM2
+.pm2/
+pm2.log
+
+# 백업 파일
+*.bak
+*.backup
+
+# 로컬 설정
+config.local.js
+settings.local.json
+
+# Claude Code 관련 파일들
+.claude/
+CLAUDE.md
+claude.md
+.claude*
+
+# RSS 캐시 파일들
+.cache/

@@ -1,0 +1,208 @@
+{
+  "services": [
+    {
+      "key": "geeknews",
+      "name": "GeekNews",
+      "nameKo": "긱뉴스",
+      "path": "geekNews",
+      "url": "https://news.hada.io",
+      "feedUrl": "https://news.hada.io/rss/news",
+      "enabled": true,
+      "type": "curated",
+      "category": "global",
+      "description": "Hacker News 한국판 - 프론트엔드 필터링 적용",
+      "features": {
+        "frontendFilter": true,
+        "customParser": true
+      }
+    },
+    {
+      "key": "kofeArticle",
+      "name": "Korean FE Article",
+      "nameKo": "Korean FE Article",
+      "path": "kofeArticle",
+      "url": "https://kofearticle.substack.com",
+      "feedUrl": "https://kofearticle.substack.com/feed",
+      "enabled": true,
+      "type": "specialized",
+      "category": "frontend",
+      "description": "한국 프론트엔드 아티클 큐레이션"
+    },
+    {
+      "key": "toss",
+      "name": "Toss Tech",
+      "nameKo": "토스",
+      "path": "toss",
+      "url": "https://toss.tech",
+      "feedUrl": "https://toss.tech/rss.xml",
+      "enabled": true,
+      "type": "corporate",
+      "category": "fintech",
+      "description": "토스 기술 블로그"
+    },
+    {
+      "key": "naverd2",
+      "name": "Naver D2",
+      "nameKo": "네이버 D2",
+      "path": "naverd2",
+      "url": "https://d2.naver.com/home",
+      "feedUrl": "https://d2.naver.com/d2.atom",
+      "enabled": true,
+      "type": "corporate",
+      "category": "general",
+      "description": "네이버 개발자 블로그",
+      "headers": {
+        "userAgent": "Mozilla/5.0 RSS Reader 1.0",
+        "accept": "application/rss+xml, application/xml, text/xml, */*"
+      }
+    },
+    {
+      "key": "naverfenews",
+      "name": "Naver FE News",
+      "nameKo": "네이버 FE News",
+      "path": "naverfenews",
+      "url": "https://github.com/naver/fe-news",
+      "feedUrl": "https://github.com/naver/fe-news/commits/master.atom",
+      "enabled": true,
+      "type": "curated",
+      "category": "frontend",
+      "description": "네이버 프론트엔드 뉴스 큐레이션",
+      "features": {
+        "customParser": true,
+        "githubReadme": true
+      }
+    },
+    {
+      "key": "toast",
+      "name": "NHN Toast",
+      "nameKo": "NHN 토스트",
+      "path": "toast",
+      "url": "https://meetup.nhncloud.com",
+      "feedUrl": "https://meetup.toast.com/rss",
+      "enabled": true,
+      "type": "corporate",
+      "category": "cloud",
+      "description": "NHN 기술 블로그"
+    },
+    {
+      "key": "woowahan",
+      "name": "Woowahan Tech",
+      "nameKo": "우아한형제들",
+      "path": "woowahan",
+      "url": "https://techblog.woowahan.com",
+      "feedUrl": "https://techblog.woowahan.com/feed",
+      "enabled": true,
+      "type": "corporate",
+      "category": "backend",
+      "description": "배달의민족 기술 블로그"
+    },
+    {
+      "key": "kakao",
+      "name": "Kakao Tech",
+      "nameKo": "카카오",
+      "path": "kakao",
+      "url": "https://tech.kakao.com",
+      "feedUrl": "https://tech.kakao.com/feed",
+      "enabled": false,
+      "type": "corporate",
+      "category": "ai",
+      "description": "카카오 기술 블로그"
+    },
+    {
+      "key": "kakaoenterprise",
+      "name": "Kakao Enterprise",
+      "nameKo": "카카오엔터프라이즈",
+      "path": "kakaoenterprise",
+      "url": "https://tech.kakaoenterprise.com",
+      "feedUrl": "https://tech.kakaoenterprise.com/feed",
+      "enabled": true,
+      "type": "corporate",
+      "category": "enterprise",
+      "description": "카카오 엔터프라이즈 기술 블로그",
+      "headers": {
+        "userAgent": "Mozilla/5.0 Kakao Enterprise RSS Reader 1.0"
+      }
+    },
+    {
+      "key": "lycorp",
+      "name": "LY Corporation",
+      "nameKo": "LINE",
+      "path": "lycorp",
+      "url": "https://techblog.lycorp.co.jp/ko",
+      "feedUrl": "https://techblog.lycorp.co.jp/ko/feed/index.xml",
+      "enabled": true,
+      "type": "corporate",
+      "category": "messaging",
+      "description": "라인 엔지니어링 블로그"
+    },
+    {
+      "key": "banksalad",
+      "name": "Banksalad",
+      "nameKo": "뱅크샐러드",
+      "path": "banksalad",
+      "url": "https://blog.banksalad.com/tech",
+      "feedUrl": "https://blog.banksalad.com/rss.xml",
+      "enabled": true,
+      "type": "corporate",
+      "category": "fintech",
+      "description": "뱅크샐러드 기술 블로그"
+    },
+    {
+      "key": "gaerae",
+      "name": "Gaerae",
+      "nameKo": "개발자스럽다",
+      "path": "gaerae",
+      "url": "https://blog.gaerae.com",
+      "feedUrl": "https://blog.gaerae.com/feeds/posts/default?alt=rss",
+      "enabled": true,
+      "type": "personal",
+      "category": "general",
+      "description": "개인 기술 블로그"
+    },
+    {
+      "key": "hyperconnect",
+      "name": "Hyperconnect",
+      "nameKo": "하이퍼커넥트",
+      "path": "hyperconnect",
+      "url": "https://hyperconnect.github.io",
+      "feedUrl": "https://hyperconnect.github.io/feed.xml",
+      "enabled": true,
+      "type": "corporate",
+      "category": "rtc",
+      "description": "하이퍼커넥트 기술 블로그"
+    },
+    {
+      "key": "44bits",
+      "name": "44BITS",
+      "nameKo": "44BITS",
+      "path": "44bits",
+      "url": "https://www.44bits.io/ko",
+      "feedUrl": "https://www.44bits.io/ko/feed/all",
+      "enabled": true,
+      "type": "specialized",
+      "category": "devops",
+      "description": "클라우드와 DevOps"
+    }
+  ],
+  "categories": {
+    "frontend": "프론트엔드",
+    "backend": "백엔드",
+    "devops": "데브옵스",
+    "cloud": "클라우드",
+    "ai": "AI/ML",
+    "fintech": "핀테크",
+    "general": "종합",
+    "community": "커뮤니티",
+    "enterprise": "엔터프라이즈",
+    "messaging": "메시징",
+    "rtc": "실시간 통신",
+    "global": "글로벌"
+  },
+  "types": {
+    "corporate": "기업 블로그",
+    "personal": "개인 블로그",
+    "platform": "플랫폼",
+    "curated": "큐레이션",
+    "specialized": "전문 매체"
+  }
+}
