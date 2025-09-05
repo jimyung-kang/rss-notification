@@ -52,7 +52,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: 'pnpm'
       
       # pnpm 설치 (프로젝트에서 사용하는 패키지 매니저)
       - name: pnpm 설치
