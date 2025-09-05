@@ -131,14 +131,17 @@ class ServiceLoader {
    * 캐시 모드 결정
    */
   #determineCacheMode() {
-    // once 모드: 캐시 완전 우회
-    if (CLI_CONFIG.modes.isOnceMode) {
-      return 'bypass';
+    // CI 환경(GitHub Actions): 파일 캐시 사용
+    // once 모드여도 CI 환경에서는 파일 캐시 사용
+    if (process.env.CI === 'true') {
+      logger.info('CI 환경 감지: 파일 캐시 모드 사용');
+      return 'file';
     }
 
-    // CI 환경: 파일 캐시 사용
-    if (process.env.CI === 'true') {
-      return 'file';
+    // 로컬 환경에서 once 모드: 캐시 우회
+    if (CLI_CONFIG.modes.isOnceMode) {
+      logger.info('로컬 once 모드: 캐시 우회');
+      return 'bypass';
     }
 
     // 기본값: 메모리 캐시 (start:times 모드)

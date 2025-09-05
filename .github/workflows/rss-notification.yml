@@ -11,7 +11,7 @@ on:
     # - cron: '0 6 * * *'
     # KST 18:00 = UTC 09:00
     # - cron: '0 9 * * *'
-    - cron: '*/6 * * * *'
+    - cron: '*/10 * * * *'
   
   # 수동 실행 허용
   workflow_dispatch:
@@ -70,12 +70,22 @@ jobs:
       
       # RSS 캐시 복원
       - name: RSS 캐시 복원
+        id: cache
         uses: actions/cache@v4
         with:
-          path: .cache/rss-daily-cache.json
-          key: rss-daily-cache-${{ steps.date.outputs.date }}
+          path: .cache
+          key: rss-daily-cache-${{ steps.date.outputs.date }}-${{ hashFiles('**/package.json') }}
           restore-keys: |
+            rss-daily-cache-${{ steps.date.outputs.date }}-
             rss-daily-cache-
+      
+      # 캐시 디렉토리 생성 (캐시가 없는 경우)
+      - name: 캐시 디렉토리 생성
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .cache
+          echo '{}' > .cache/rss-daily-cache.json
+          echo "📂 캐시 디렉토리 및 파일 생성 완료"
       
       # 환경 변수 파일 생성 (Secrets과 Variables 모두 사용)
       - name: 환경 변수 설정
@@ -88,6 +98,7 @@ jobs:
           echo "TZ=Asia/Seoul" >> .env
           echo "PORT=3000" >> .env
           echo "RSS_SCHEDULE_CRON=30 8 * * *" >> .env
+          echo "CI=true" >> .env
 
       # 환경 변수 확인 (디버깅용)
       - name: 환경 변수 확인
@@ -105,22 +116,29 @@ jobs:
       # RSS 알림 실행
       - name: RSS 알림 실행
         run: |
+          # CI 환경 변수 확인 (파일 캐시 모드 작동)
+          export CI=true
+          
           # 스케줄 트리거 또는 수동 실행 감지
           if [ "${{ github.event_name }}" == "schedule" ]; then
-            echo "⏰ 스케줄 실행: KST 9시/12시/15시/18시"
-            echo "📅 필터 날짜: 최근 3일 (테스트용)"
-            node index.js --once --filter-days=3
+            echo "⏰ 스케줄 실행"
+            echo "📅 필터 날짜: 최근 3일"
+            echo "💾 캐시 모드: 파일 (CI=true)"
+            # 스케줄 실행 시에는 --once 옵션 제거하여 캐시가 정상 작동하도록 함
+            node index.js --filter-days=3
           else
-            echo "🚀 한번 실행 모드"
-            echo "📅 필터 날짜: 최근 3일 (테스트용)"
-            node index.js --once --filter-days=3
+            echo "🚀 수동 실행 모드"
+            echo "📅 필터 날짜: 최근 3일"
+            echo "💾 캐시 모드: 파일 (CI=true)"
+            # 수동 실행도 캐시를 사용하도록 함
+            node index.js --filter-days=3
           fi
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET || vars.WEBHOOK_SECRET }}
       
-      # 캐시 파일 확인 (디버깅용)
+      # 캐시 파일 상태 확인 (디버깅용)
       - name: 캐시 파일 상태 확인
         if: always()
         run: |
@@ -128,11 +146,26 @@ jobs:
           if [ -f .cache/rss-daily-cache.json ]; then
             echo "   - 캐시 파일 존재 ✅"
             echo "   - 파일 크기: $(du -h .cache/rss-daily-cache.json | cut -f1)"
-            echo "   - 최근 엔트리 (처음 5개):"
-            head -n 100 .cache/rss-daily-cache.json | grep -E '"url":|"date":' | head -n 10 || echo "     캐시 내용 읽기 실패"
+            echo "   - 캐시 내용 예시:"
+            # JSON 파일의 처음 부분 확인
+            head -n 20 .cache/rss-daily-cache.json | jq '.' 2>/dev/null || echo "     빈 캐시 또는 형식 오류"
+            
+            # 캐시 통계
+            echo "   - 캐시 통계:"
+            CACHE_SIZE=$(jq 'to_entries | map(.value | length) | add' .cache/rss-daily-cache.json 2>/dev/null || echo "0")
+            echo "     총 캐시된 항목: ${CACHE_SIZE}개"
           else
             echo "   - 캐시 파일 없음 ⚠️"
+            echo "   - 새로운 실행이거나 캐시가 초기화된 상태"
           fi
+      
+      # 캐시 저장 (다음 실행을 위해)
+      - name: 캐시 저장
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .cache
+          key: rss-daily-cache-${{ steps.date.outputs.date }}-${{ hashFiles('**/package.json') }}
       
       # 실행 완료 로그
       - name: 실행 완료 알림

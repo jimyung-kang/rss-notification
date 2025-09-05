@@ -99,7 +99,12 @@ class BaseScheduler {
     }
 
     this.isManualRunning = true;
-    this.bypassCache = bypassCache; // 캐시 우회 플래그 설정
+    // CI 환경에서는 캐시를 사용 (파일 캐시)
+    // 로컬 once 모드에서만 캐시 우회
+    this.bypassCache = process.env.CI !== 'true' && bypassCache;
+    
+    logger.debug(`${this.domainName} 캐시 설정 - CI: ${process.env.CI}, bypassCache: ${bypassCache}, 최종: ${this.bypassCache}`);
+    
     try {
       return await this.executeJob('manual');
     } finally {
