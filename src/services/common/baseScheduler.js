@@ -123,7 +123,7 @@ class BaseScheduler {
     this.stats.lastRunTime = new Date();
 
     try {
-      logger.info(`${this.domainName} 작업 시작 (트리거: ${triggerType})`);
+      logger.info(`${this.domainName} 작업 시작 (트리거: ${triggerType}, 캐시우회: ${this.bypassCache})`);
       
       // 하위 클래스에서 구현할 메서드 호출
       const result = await this.executeArticleCheck(triggerType);
@@ -131,7 +131,8 @@ class BaseScheduler {
       const duration = Date.now() - startTime;
       logger.info(`${this.domainName} 작업 완료`, {
         ...result,
-        duration: `${duration}ms`
+        duration: `${duration}ms`,
+        bypassCache: this.bypassCache
       });
       
       this.stats.successfulRuns++;

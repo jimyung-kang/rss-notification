@@ -4,13 +4,14 @@ name: RSS 알림 스케줄러
 on:
   schedule:
     # KST 09:00 = UTC 00:00
-    - cron: '0 0 * * *'
+    # - cron: '0 0 * * *'
     # KST 12:00 = UTC 03:00
-    - cron: '0 3 * * *'
+    # - cron: '0 3 * * *'
     # KST 15:00 = UTC 06:00
-    - cron: '0 6 * * *'
+    # - cron: '0 6 * * *'
     # KST 18:00 = UTC 09:00
-    - cron: '0 9 * * *'
+    # - cron: '0 9 * * *'
+    - cron: '* * * * *'
   
   # 수동 실행 허용
   workflow_dispatch:
@@ -22,18 +23,12 @@ on:
         type: choice
         options:
           - 'once'
-          - 'schedule'
-      test_run:
-        description: '테스트 실행 여부'
-        required: false
-        default: false
-        type: boolean
 
 # 환경 변수 설정
 env:
   TZ: Asia/Seoul
   NODE_ENV: production
-  LOG_LEVEL: info
+  LOG_LEVEL: debug  # 디버그 로그 활성화
 
 jobs:
   rss-notification:
@@ -90,33 +85,48 @@ jobs:
           echo "TZ=Asia/Seoul" >> .env
           echo "PORT=3000" >> .env
           echo "RSS_SCHEDULE_CRON=30 8 * * *" >> .env
-      
-      # 테스트 실행 (선택적)
-      - name: 테스트 실행
-        if: ${{ github.event.inputs.test_run == 'true' }}
+
+      # 환경 변수 확인 (디버깅용)
+      - name: 환경 변수 확인
         run: |
-          echo "🧪 필터링 테스트 실행"
-          node src/test/aiFilterTest.js || true
-          node src/test/lenientFilterTest.js || true
-      
+          echo "📋 환경 변수 설정 확인:"
+          echo "   - NODE_ENV: $NODE_ENV"
+          echo "   - LOG_LEVEL: $LOG_LEVEL"
+          echo "   - TZ: $TZ"
+          echo "   - TELEGRAM 설정: $(if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}" ]; then echo "✅ 설정됨"; else echo "❌ 누락"; fi)"
+          echo "   - 실행 모드: ${{ github.event_name }}"
+
       # RSS 알림 실행
       - name: RSS 알림 실행
         run: |
           # 스케줄 트리거 또는 수동 실행 감지
           if [ "${{ github.event_name }}" == "schedule" ]; then
             echo "⏰ 스케줄 실행: KST 9시/12시/15시/18시"
-            node index.js --once --filter-days=1
-          elif [ "${{ github.event.inputs.mode }}" == "schedule" ]; then
-            echo "📅 수동 스케줄 모드로 실행"
-            node index.js
+            echo "📅 필터 날짜: 최근 3일 (테스트용)"
+            node index.js --once --filter-days=3
           else
             echo "🚀 한번 실행 모드"
-            node index.js --once --filter-days=1
+            echo "📅 필터 날짜: 최근 3일 (테스트용)"
+            node index.js --once --filter-days=3
           fi
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID || vars.TELEGRAM_CHAT_ID }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET || vars.WEBHOOK_SECRET }}
+      
+      # 캐시 파일 확인 (디버깅용)
+      - name: 캐시 파일 상태 확인
+        if: always()
+        run: |
+          echo "📂 캐시 파일 확인:"
+          if [ -f .cache/rss-daily-cache.json ]; then
+            echo "   - 캐시 파일 존재 ✅"
+            echo "   - 파일 크기: $(du -h .cache/rss-daily-cache.json | cut -f1)"
+            echo "   - 최근 엔트리 (처음 5개):"
+            head -n 100 .cache/rss-daily-cache.json | grep -E '"url":|"date":' | head -n 10 || echo "     캐시 내용 읽기 실패"
+          else
+            echo "   - 캐시 파일 없음 ⚠️"
+          fi
       
       # 실행 완료 로그
       - name: 실행 완료 알림
@@ -124,6 +134,11 @@ jobs:
         run: |
           if [ ${{ job.status }} == 'success' ]; then
             echo "✅ RSS 알림 실행 완료"
+            echo "📊 실행 요약:"
+            echo "   - 실행 시간: $(date +'%Y-%m-%d %H:%M:%S %Z')"
+            echo "   - 실행 모드: ${{ github.event_name }}"
+            echo "   - 작업 상태: 성공"
           else
             echo "❌ RSS 알림 실행 실패"
+            echo "   - 오류 발생 시점을 확인하세요"
           fi

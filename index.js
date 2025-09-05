@@ -525,6 +525,8 @@ class OnceExecutor {
     
     try {
       logger.info(`📡 ${service.name} 실행 시작...`);
+      logger.info(`   - 캐시 우회 모드: ${CLI_CONFIG.modes.isOnceMode ? 'ON' : 'OFF'}`);
+      logger.info(`   - 필터 날짜: 최근 ${CLI_CONFIG.filtering.filterDays}일`);
       
       const serviceModule = service.module;
       
@@ -534,6 +536,12 @@ class OnceExecutor {
       try {
         const result = await serviceModule.scheduler.runManualCheck(CLI_CONFIG.modes.isOnceMode);
         const duration = performance.now() - startTime;
+        
+        logger.info(`📡 ${service.name} 실행 결과:`, {
+          articlesFound: result?.articlesFound || 0,
+          messagesSent: result?.messagesSent || 0,
+          failed: result?.failed || 0
+        });
         
         return {
           success: true,
