@@ -11,7 +11,7 @@ on:
     # - cron: '0 6 * * *'
     # KST 18:00 = UTC 09:00
     # - cron: '0 9 * * *'
-    - cron: '* * * * *'
+    - cron: '*/6 * * * *'
   
   # 수동 실행 허용
   workflow_dispatch:
