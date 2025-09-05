@@ -11,7 +11,7 @@ on:
     # - cron: '0 6 * * *'
     # KST 18:00 = UTC 09:00
     # - cron: '0 9 * * *'
-    - cron: '* * * * *'
+    - cron: '*/6 * * * *'
   
   # 수동 실행 허용
   workflow_dispatch:
@@ -33,6 +33,9 @@ env:
 jobs:
   rss-notification:
     runs-on: ubuntu-latest
+    
+    # Environment 설정
+    environment: production
     
     # 타임아웃 설정 (30분)
     timeout-minutes: 30
@@ -90,11 +93,14 @@ jobs:
       - name: 환경 변수 확인
         run: |
           echo "📋 환경 변수 설정 확인:"
+          echo "   - Environment: production"
           echo "   - NODE_ENV: $NODE_ENV"
           echo "   - LOG_LEVEL: $LOG_LEVEL"
           echo "   - TZ: $TZ"
-          echo "   - TELEGRAM 설정: $(if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN || vars.TELEGRAM_BOT_TOKEN }}" ]; then echo "✅ 설정됨"; else echo "❌ 누락"; fi)"
+          echo "   - TELEGRAM_BOT_TOKEN: $(if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ]; then echo "✅ secrets에서 설정됨"; elif [ -n "${{ vars.TELEGRAM_BOT_TOKEN }}" ]; then echo "⚠️ vars에서 설정됨"; else echo "❌ 누락"; fi)"
+          echo "   - TELEGRAM_CHAT_ID: $(if [ -n "${{ secrets.TELEGRAM_CHAT_ID }}" ]; then echo "✅ secrets에서 설정됨"; elif [ -n "${{ vars.TELEGRAM_CHAT_ID }}" ]; then echo "⚠️ vars에서 설정됨"; else echo "❌ 누락"; fi)"
           echo "   - 실행 모드: ${{ github.event_name }}"
+          echo "   - 실행 시간: $(date +'%Y-%m-%d %H:%M:%S %Z')"
 
       # RSS 알림 실행
       - name: RSS 알림 실행
