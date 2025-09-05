@@ -47,18 +47,18 @@ jobs:
       - name: 코드 체크아웃
         uses: actions/checkout@v4
       
+      # pnpm 설치 (프로젝트에서 사용하는 패키지 매니저)
+      - name: pnpm 설치
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+      
       # Node.js 환경 설정
       - name: Node.js 설정
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-      
-      # pnpm 설치 (프로젝트에서 사용하는 패키지 매니저)
-      - name: pnpm 설치
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.14.0
       
       # 오늘 날짜 설정 (캐시 키용)
       - name: 날짜 설정
